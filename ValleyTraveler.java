@@ -2,7 +2,7 @@
  * ValleyTraveler class represents a magical map that can identify and modify
  * valley points in the landscape of Numerica.
  * 
- * @author <Your Name>
+ * @author <Luu Vo>
  */
 public class ValleyTraveler {
 
