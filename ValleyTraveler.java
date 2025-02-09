@@ -7,6 +7,9 @@
 public class ValleyTraveler {
 
     // Instance variables to manage the landscape and collected treasures.
+    private int[] landscape;
+    private int size;
+    private double totalTreasure;
 
     /**
      * Constructor to initialize the magical map with the given landscape of Numerica.
@@ -14,7 +17,10 @@ public class ValleyTraveler {
      * @param landscape An array of distinct integers representing the landscape.
      */
     public ValleyTraveler(int[] landscape) {
-        // Initialize the internal state based on the provided landscape.
+        this.landscape = new int[landscape.length];
+        System.arraycopy(landscape, 0, this.landscape, 0, landscape.length);
+        this.size = landscape.length;
+        this.totalTreasure = 0.0;
     }
 
     /**
@@ -23,8 +29,7 @@ public class ValleyTraveler {
      * @return true if the landscape is empty, false otherwise.
      */
     public boolean isEmpty() {
-        // Determine if the landscape is empty.
-        return false;
+        return size == 0;
     }
 
     /**
@@ -33,8 +38,11 @@ public class ValleyTraveler {
      * @return The treasure associated with the first valley point.
      */
     public double getFirst() {
-        // Locate the first valley point and calculate its treasure.
-        return -1;
+        int index = findFirstValley();
+        if (index == -1) {
+            return -1; // No valley found
+        }
+        return calculateTreasure(index);
     }
 
     /**
@@ -43,8 +51,14 @@ public class ValleyTraveler {
      * @return The treasure collected from the excavated valley point.
      */
     public double remove() {
-        // Remove the first valley point and update internal state.
-        return -1;
+        int index = findFirstValley();
+        if (index == -1) {
+            return -1; // No valley found
+        }
+        double treasure = calculateTreasure(index);
+        totalTreasure += treasure;
+        removeElement(index);
+        return treasure;
     }
 
     /**
@@ -53,7 +67,12 @@ public class ValleyTraveler {
      * @param height The height of the new landform.
      */
     public void insert(int height) {
-        // Insert a new landform at the correct position.
+        int index = findFirstValley();
+        if (index == -1) {
+            addElement(height);
+        } else {
+            addElementAtIndex(height, index);
+        }
     }
 
     /**
@@ -62,7 +81,96 @@ public class ValleyTraveler {
      * @return The total treasure collected.
      */
     public double getTotalTreasure() {
-        // Calculate and return the total treasure collected.
-        return -1.0;
+        return totalTreasure;
+    }
+
+    /**
+     * Helper method to find the index of the first valley point in the landscape.
+     * 
+     * @return The index of the first valley point, or -1 if no valley is found.
+     */
+    private int findFirstValley() {
+        if (size == 1) {
+            return 0;
+        }
+        for (int i = 0; i < size; i++) {
+            if (i == 0) {
+                if (landscape[i] < landscape[i + 1]) {
+                    return i;
+                }
+            } else if (i == size - 1) {
+                if (landscape[i] < landscape[i - 1]) {
+                    return i;
+                }
+            } else {
+                if (landscape[i] < landscape[i - 1] && landscape[i] < landscape[i + 1]) {
+                    return i;
+                }
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Helper method to calculate the treasure associated with a valley point at a given index.
+     * 
+     * @param index The index of the valley point.
+     * @return The treasure associated with the valley point.
+     */
+    private double calculateTreasure(int index) {
+        double sum = 0;
+        for (int i = 0; i <= index; i++) {
+            sum += landscape[i];
+        }
+        return sum / (index + 1);
+    }
+
+    /**
+     * Helper method to remove an element at a specific index from the landscape array.
+     * 
+     * @param index The index of the element to remove.
+     */
+    private void removeElement(int index) {
+        for (int i = index; i < size - 1; i++) {
+            landscape[i] = landscape[i + 1];
+        }
+        size--;
+    }
+
+    /**
+     * Helper method to add an element at the end of the landscape array.
+     * 
+     * @param height The height of the new landform.
+     */
+    private void addElement(int height) {
+        if (size >= landscape.length) {
+            int[] newLandscape = new int[landscape.length + 1];
+            System.arraycopy(landscape, 0, newLandscape, 0, landscape.length);
+            landscape = newLandscape;
+        }
+        landscape[size] = height;
+        size++;
+    }
+
+    /**
+     * Helper method to add an element at a specific index in the landscape array.
+     * 
+     * @param height The height of the new landform.
+     * @param index The index at which to insert the new landform.
+     */
+    private void addElementAtIndex(int height, int index) {
+        if (size >= landscape.length) {
+            int[] newLandscape = new int[landscape.length + 1];
+            System.arraycopy(landscape, 0, newLandscape, 0, index);
+            newLandscape[index] = height;
+            System.arraycopy(landscape, index, newLandscape, index + 1, size - index);
+            landscape = newLandscape;
+        } else {
+            for (int i = size; i > index; i--) {
+                landscape[i] = landscape[i - 1];
+            }
+            landscape[index] = height;
+        }
+        size++;
     }
 }
