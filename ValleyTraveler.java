@@ -1,12 +1,12 @@
 /**
  * ValleyTraveler class represents a magical map that can identify and modify
  * valley points in the landscape of Numerica.
- * Optimized using a doubly linked list and cumulative sums for O(1) operations.
  * 
  * @author <Your Name>
  */
 public class ValleyTraveler {
 
+    // Node class for the doubly linked list
     private static class Node {
         int height;
         Node prev;
@@ -19,9 +19,10 @@ public class ValleyTraveler {
         }
     }
 
+    // Instance variables
     private Node head; // Head of the doubly linked list
     private Node tail; // Tail of the doubly linked list
-    private Node firstValley; // Pointer to the first valley point
+    private Node firstValley; // Pointer to the first valley node
     private double totalTreasure; // Total treasure collected
     private int size; // Size of the landscape
 
@@ -31,139 +32,32 @@ public class ValleyTraveler {
      * @param landscape An array of distinct integers representing the landscape.
      */
     public ValleyTraveler(int[] landscape) {
-        this.head = null;
-        this.tail = null;
-        this.firstValley = null;
-        this.totalTreasure = 0.0;
-        this.size = 0;
-
-        // Build the doubly linked list from the landscape array
-        for (int height : landscape) {
-            addElement(height);
+        if (landscape == null || landscape.length == 0) {
+            throw new IllegalArgumentException("Landscape cannot be null or empty.");
         }
 
-        // Find the first valley point
+        // Initialize the doubly linked list
+        head = new Node(landscape[0]);
+        Node current = head;
+        for (int i = 1; i < landscape.length; i++) {
+            Node newNode = new Node(landscape[i]);
+            current.next = newNode;
+            newNode.prev = current;
+            current = newNode;
+        }
+        tail = current;
+
+        // Initialize the first valley
         firstValley = findFirstValley();
+        totalTreasure = 0.0;
+        size = landscape.length;
     }
 
     /**
-     * Checks if the entire landscape is excavated (i.e., there are no landforms left).
+     * Finds the first valley in the landscape.
      * 
-     * @return true if the landscape is empty, false otherwise.
+     * @return The first valley node.
      */
-
-    public boolean isEmpty() {
-        return size == 0;
-    }
-
-    /**
-     * Locates the first valley point in the landscape of Numerica.
-     * 
-     * @return The treasure associated with the first valley point.
-     */
-    public double getFirst() {
-        if (firstValley == null) {
-            return -1; // No valley found
-        }
-        return calculateTreasure(firstValley);
-    }
-
-    /**
-     * Excavates the first valley point, removing it from the landscape of Numerica.
-     * 
-     * @return The treasure collected from the excavated valley point.
-     */
-    public double remove() {
-        if (firstValley == null) {
-            return -1; // No valley found
-        }
-
-        // Calculate the treasure for the first valley
-        double treasure = calculateTreasure(firstValley);
-        totalTreasure += treasure;
-
-        // Remove the first valley node
-        removeNode(firstValley);
-
-        // Update the first valley pointer
-        firstValley = findFirstValley();
-
-        return treasure;
-    }
-
-    /**
-     * Creates a new landform at the position where the first valley was just removed.
-     * 
-     * @param height The height of the new landform.
-     */
-    public void insert(int height) {
-        if (firstValley == null) {
-            // If no valley exists, add the new element to the end
-            addElement(height);
-        } else {
-            // Insert the new element at the position of the first valley
-            insertBefore(firstValley, height);
-        }
-
-        // Update the first valley pointer
-        firstValley = findFirstValley();
-    }
-
-    public double getTotalTreasure() {
-        return totalTreasure;
-    }
-
-    // Helper method to add an element to the end of the list
-    private void addElement(int height) {
-        Node newNode = new Node(height);
-        if (tail == null) {
-            head = newNode;
-            tail = newNode;
-        } else {
-            tail.next = newNode;
-            newNode.prev = tail;
-            tail = newNode;
-        }
-        size++;
-    }
-
-    // Helper method to insert an element before a given node
-    private void insertBefore(Node node, int height) {
-        Node newNode = new Node(height);
-        newNode.prev = node.prev;
-        newNode.next = node;
-
-        if (node.prev != null) {
-            node.prev.next = newNode;
-        } else {
-            head = newNode;
-        }
-        node.prev = newNode;
-        size++;
-    }
-
-    // Helper method to remove a node from the list
-    private void removeNode(Node node) {
-        if (node.prev != null) {
-            node.prev.next = node.next;
-        } else {
-            head = node.next;
-        }
-
-        if (node.next != null) {
-            node.next.prev = node.prev;
-        } else {
-            tail = node.prev;
-        }
-        size--;
-
-        // If the removed node was the first valley, update the pointer
-        if (node == firstValley) {
-            firstValley = findFirstValley();
-        }
-    }
-
-    // Helper method to find the first valley point
     private Node findFirstValley() {
         Node current = head;
         while (current != null) {
@@ -175,39 +69,129 @@ public class ValleyTraveler {
         return null;
     }
 
-    // Helper method to check if a node is a valley
+    /**
+     * Checks if a node is a valley.
+     * 
+     * @param node The node to check.
+     * @return true if the node is a valley, false otherwise.
+     */
     private boolean isValley(Node node) {
-        if (node.prev == null && node.next == null) {
-            return true; // Single node is a valley
-        }
-        if (node.prev == null) {
-            return node.height < node.next.height; // First node
-        }
-        if (node.next == null) {
-            return node.height < node.prev.height; // Last node
-        }
-        return node.height < node.prev.height && node.height < node.next.height; // Middle node
+        if (node == null) return false;
+        if (node.prev == null && node.next == null) return true; // Single node
+        if (node.prev == null) return node.height < node.next.height; // First node
+        if (node.next == null) return node.height < node.prev.height; // Last node
+        return node.height < node.prev.height && node.height < node.next.height;
     }
 
     /**
-     * Calculates the treasure of a given valley point.
+     * Checks if the entire landscape is excavated (i.e., there are no landforms left).
      * 
-     * @param valleyNode The valley node.
-     * @return The treasure value.
+     * @return true if the landscape is empty, false otherwise.
      */
-    
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
+    /**
+     * Locates the first valley point in the landscape of Numerica.
+     * 
+     * @return The treasure associated with the first valley point.
+     */
+    public double getFirst() {
+        if (isEmpty()) {
+            throw new IllegalStateException("Landscape is empty.");
+        }
+        return calculateTreasure(firstValley);
+    }
+
+    /**
+     * Excavates the first valley point, removing it from the landscape of Numerica.
+     * 
+     * @return The treasure collected from the excavated valley point.
+     */
+    public double remove() {
+        if (isEmpty()) {
+            throw new IllegalStateException("Landscape is empty.");
+        }
+
+        double treasure = calculateTreasure(firstValley);
+        totalTreasure += treasure;
+
+        // Remove the first valley node
+        if (firstValley.prev != null) {
+            firstValley.prev.next = firstValley.next;
+        } else {
+            head = firstValley.next;
+        }
+        if (firstValley.next != null) {
+            firstValley.next.prev = firstValley.prev;
+        } else {
+            tail = firstValley.prev;
+        }
+
+        size--;
+        firstValley = findFirstValley();
+        return treasure;
+    }
+
+    /**
+     * Creates a new landform at the position where the first valley was just removed.
+     * 
+     * @param height The height of the new landform.
+     */
+    public void insert(int height) {
+        Node newNode = new Node(height);
+        if (firstValley == null) {
+            // If no valley, insert at the head
+            newNode.next = head;
+            if (head != null) {
+                head.prev = newNode;
+            }
+            head = newNode;
+            if (tail == null) {
+                tail = newNode;
+            }
+        } else {
+            // Insert before the first valley
+            newNode.next = firstValley;
+            newNode.prev = firstValley.prev;
+            if (firstValley.prev != null) {
+                firstValley.prev.next = newNode;
+            } else {
+                head = newNode;
+            }
+            firstValley.prev = newNode;
+        }
+        size++;
+        firstValley = findFirstValley();
+    }
+
+    /**
+     * Returns the current total treasure collected through successive remove operations.
+     * 
+     * @return The total treasure collected.
+     */
+    public double getTotalTreasure() {
+        return totalTreasure;
+    }
+
+    /**
+     * Calculates the treasure associated with a valley node.
+     * 
+     * @param node The valley node.
+     * @return The treasure associated with the valley node.
+     */
     private double calculateTreasure(Node node) {
-        double sum = 0;
+        if (node == null) return 0.0;
+        int sum = 0;
         int count = 0;
         Node current = head;
         while (current != null) {
             sum += current.height;
             count++;
-            if (current == node) {
-                break;
-            }
+            if (current == node) break;
             current = current.next;
         }
-        return sum / count;
+        return (double) sum / count;
     }
 }
