@@ -1,3 +1,10 @@
+/**
+ * ValleyTraveler class represents a magical map that can identify and modify
+ * valley points in the landscape of Numerica.
+ * Optimized using a doubly linked list and cumulative sums for O(1) operations.
+ * 
+ * @author <Your Name>
+ */
 public class ValleyTraveler {
 
     private static class Node {
@@ -18,6 +25,11 @@ public class ValleyTraveler {
     private double totalTreasure; // Total treasure collected
     private int size; // Size of the landscape
 
+    /**
+     * Constructor to initialize the magical map with the given landscape of Numerica.
+     * 
+     * @param landscape An array of distinct integers representing the landscape.
+     */
     public ValleyTraveler(int[] landscape) {
         this.head = null;
         this.tail = null;
@@ -34,10 +46,21 @@ public class ValleyTraveler {
         firstValley = findFirstValley();
     }
 
+    /**
+     * Checks if the entire landscape is excavated (i.e., there are no landforms left).
+     * 
+     * @return true if the landscape is empty, false otherwise.
+     */
+
     public boolean isEmpty() {
         return size == 0;
     }
 
+    /**
+     * Locates the first valley point in the landscape of Numerica.
+     * 
+     * @return The treasure associated with the first valley point.
+     */
     public double getFirst() {
         if (firstValley == null) {
             return -1; // No valley found
@@ -45,6 +68,11 @@ public class ValleyTraveler {
         return calculateTreasure(firstValley);
     }
 
+    /**
+     * Excavates the first valley point, removing it from the landscape of Numerica.
+     * 
+     * @return The treasure collected from the excavated valley point.
+     */
     public double remove() {
         if (firstValley == null) {
             return -1; // No valley found
@@ -63,6 +91,11 @@ public class ValleyTraveler {
         return treasure;
     }
 
+    /**
+     * Creates a new landform at the position where the first valley was just removed.
+     * 
+     * @param height The height of the new landform.
+     */
     public void insert(int height) {
         if (firstValley == null) {
             // If no valley exists, add the new element to the end
@@ -123,6 +156,11 @@ public class ValleyTraveler {
             tail = node.prev;
         }
         size--;
+
+        // If the removed node was the first valley, update the pointer
+        if (node == firstValley) {
+            firstValley = findFirstValley();
+        }
     }
 
     // Helper method to find the first valley point
@@ -151,7 +189,13 @@ public class ValleyTraveler {
         return node.height < node.prev.height && node.height < node.next.height; // Middle node
     }
 
-    // Helper method to calculate the treasure for a valley node
+    /**
+     * Calculates the treasure of a given valley point.
+     * 
+     * @param valleyNode The valley node.
+     * @return The treasure value.
+     */
+    
     private double calculateTreasure(Node node) {
         double sum = 0;
         int count = 0;
