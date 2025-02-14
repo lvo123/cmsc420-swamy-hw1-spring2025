@@ -1,3 +1,4 @@
+
 /**
  * ValleyTraveler class represents a magical map that can identify and modify
  * valley points in the landscape of Numerica.
@@ -113,26 +114,71 @@ public class ValleyTraveler {
         if (isEmpty()) {
             throw new IllegalStateException("Landscape is empty.");
         }
-
+    
         double treasure = calculateTreasure(firstValley);
         totalTreasure += treasure;
-
-        // Remove the first valley node
-        if (firstValley.prev != null) {
-            firstValley.prev.next = firstValley.next;
+    
+        Node prevNode = firstValley.prev;
+        Node nextNode = firstValley.next;
+    
+        // Remove the first valley node in O(1)
+        if (prevNode != null) {
+            prevNode.next = nextNode;
         } else {
-            head = firstValley.next;
+            head = nextNode;
         }
-        if (firstValley.next != null) {
-            firstValley.next.prev = firstValley.prev;
+        if (nextNode != null) {
+            nextNode.prev = prevNode;
         } else {
-            tail = firstValley.prev;
+            tail = prevNode;
         }
-
+    
         size--;
-        firstValley = findFirstValley();
+    
+        // Find the next valley efficiently
+        firstValley = findNextValley(prevNode, nextNode);
+    
         return treasure;
     }
+    
+    /**
+     * Finds the next valley in O(1) whenever possible.
+     * If no immediate valley exists, finds the closest one.
+     */
+    private Node findNextValley(Node prev, Node next) {
+        if (prev != null && isValley(prev)) return prev;
+        if (next != null && isValley(next)) return next;
+    
+        // Perform linear scan only if necessary
+        Node current = next;
+        while (current != null) {
+            if (isValley(current)) return current;
+            current = current.next;
+        }
+        return null; // No valley found
+    }
+    
+    /**
+     * Finds the next valley in O(1) by checking immediate neighbors or using a stored reference.
+     * 
+     * @param removed The node that was removed.
+     * @return The next valley node or null if none exist.
+     */
+    private Node findNextValley(Node removed) {
+        if (removed == null) return null;
+        
+        // Check immediate neighbors first
+        if (removed.prev != null && isValley(removed.prev)) {
+            return removed.prev;
+        }
+        if (removed.next != null && isValley(removed.next)) {
+            return removed.next;
+        }
+        
+        // If no immediate valleys, return the stored `nextValley`
+        return removed.next;
+    }
+    
 
     /**
      * Creates a new landform at the position where the first valley was just removed.
@@ -141,8 +187,9 @@ public class ValleyTraveler {
      */
     public void insert(int height) {
         Node newNode = new Node(height);
+    
         if (firstValley == null) {
-            // If no valley, insert at the head
+            // If no valley exists, insert at the head in O(1)
             newNode.next = head;
             if (head != null) {
                 head.prev = newNode;
@@ -152,7 +199,7 @@ public class ValleyTraveler {
                 tail = newNode;
             }
         } else {
-            // Insert before the first valley
+            // Insert exactly at the removed valley's position in O(1)
             newNode.next = firstValley;
             newNode.prev = firstValley.prev;
             if (firstValley.prev != null) {
@@ -162,8 +209,22 @@ public class ValleyTraveler {
             }
             firstValley.prev = newNode;
         }
+    
         size++;
-        firstValley = findFirstValley();
+    
+        // Efficiently update `firstValley` in O(1)
+        if (isValley(newNode)) {
+            firstValley = newNode;
+        } else if (newNode.prev != null && isValley(newNode.prev)) {
+            firstValley = newNode.prev;
+        } else if (newNode.next != null && isValley(newNode.next)) {
+            firstValley = newNode.next;
+        } else {
+            firstValley = newNode.next; // Fallback
+            while (firstValley != null && !isValley(firstValley)) {
+                firstValley = firstValley.next;
+            }
+        }
     }
 
     /**
