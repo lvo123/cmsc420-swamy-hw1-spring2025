@@ -1,3 +1,9 @@
+/**
+ * ValleyTraveler class represents a magical map that can identify and modify
+ * valley points in the landscape of Numerica.
+ * 
+ * @author <Luu Vo>
+ */
 public class ValleyTraveler {
 
     private static class Node {
@@ -16,68 +22,75 @@ public class ValleyTraveler {
     private Node tail;
     private Node firstValley;
     private double totalTreasure;
-    private double firstValleyTreasure; // Cached treasure value for O(1) getFirst()
+    private double firstValleyTreasure;
     private int size;
+    private int totalHeightSum;
+    private int sumUpToFirstValley;
+    private int countUpToFirstValley;
 
+    /**
+     * Constructor to initialize the magical map with the given landscape of Numerica.
+     * 
+     * @param landscape An array of distinct integers representing the landscape.
+     */
     public ValleyTraveler(int[] landscape) {
         if (landscape == null || landscape.length == 0) {
             throw new IllegalArgumentException("Landscape cannot be null or empty.");
         }
 
         head = new Node(landscape[0]);
+        totalHeightSum = landscape[0];
+        size = 1;
+
         Node current = head;
         for (int i = 1; i < landscape.length; i++) {
             Node newNode = new Node(landscape[i]);
             current.next = newNode;
             newNode.prev = current;
             current = newNode;
+
+            totalHeightSum += landscape[i];
+            size++;
         }
         tail = current;
 
         firstValley = findFirstValley();
-        totalTreasure = 0.0;
-        size = landscape.length;
-
-        // Compute the initial treasure for firstValley
-        firstValleyTreasure = calculateTreasure(firstValley);
+        updateSumUpToFirstValley();
+        firstValleyTreasure = calculateTreasure();
     }
 
-    private Node findFirstValley() {
-        Node current = head;
-        while (current != null) {
-            if (isValley(current)) {
-                return current;
-            }
-            current = current.next;
-        }
-        return null;
-    }
-
-    private boolean isValley(Node node) {
-        if (node == null) return false;
-        if (node.prev == null && node.next == null) return true; // Single node
-        if (node.prev == null) return node.height < node.next.height; // First node
-        if (node.next == null) return node.height < node.prev.height; // Last node
-        return node.height < node.prev.height && node.height < node.next.height;
-    }
-
+    /**
+     * Checks if the entire landscape is excavated (i.e., there are no landforms left).
+     * 
+     * @return true if the landscape is empty, false otherwise.
+     */
     public boolean isEmpty() {
         return size == 0;
     }
 
+    /**
+     * Locates the first valley point in the landscape of Numerica.
+     * 
+     * @return The treasure associated with the first valley point.
+     */
     public double getFirst() {
         if (isEmpty()) {
             throw new IllegalStateException("Landscape is empty.");
         }
-        return firstValleyTreasure; // O(1) retrieval
+        return firstValleyTreasure;
     }
 
+    /**
+     * Excavates the first valley point, removing it from the landscape of Numerica.
+     * 
+     * @return The treasure collected from the excavated valley point.
+     */
     public double remove() {
         if (isEmpty()) {
             throw new IllegalStateException("Landscape is empty.");
         }
 
-        double treasure = firstValleyTreasure; // Use cached value
+        double treasure = firstValleyTreasure;
         totalTreasure += treasure;
 
         Node prevNode = firstValley.prev;
@@ -94,27 +107,28 @@ public class ValleyTraveler {
             tail = prevNode;
         }
 
+        totalHeightSum -= firstValley.height;
         size--;
 
-        // Update firstValley and its cached treasure
-        firstValley = findNextValley(prevNode, nextNode);
-        firstValleyTreasure = calculateTreasure(firstValley);
+        if (prevNode != null && isValley(prevNode)) {
+            firstValley = prevNode;
+        } else if (nextNode != null && isValley(nextNode)) {
+            firstValley = nextNode;
+        } else {
+            firstValley = findFirstValley();
+        }
+
+        updateSumUpToFirstValley();
+        firstValleyTreasure = calculateTreasure();
 
         return treasure;
     }
 
-    private Node findNextValley(Node prev, Node next) {
-        if (prev != null && isValley(prev)) return prev;
-        if (next != null && isValley(next)) return next;
-
-        Node current = next;
-        while (current != null) {
-            if (isValley(current)) return current;
-            current = current.next;
-        }
-        return null;
-    }
-
+    /**
+     * Creates a new landform at the position where the first valley was just removed.
+     * 
+     * @param height The height of the new landform.
+     */
     public void insert(int height) {
         Node newNode = new Node(height);
 
@@ -138,9 +152,9 @@ public class ValleyTraveler {
             firstValley.prev = newNode;
         }
 
+        totalHeightSum += height;
         size++;
 
-        // Update firstValley if the new node is a valley
         if (isValley(newNode)) {
             firstValley = newNode;
         } else if (newNode.prev != null && isValley(newNode.prev)) {
@@ -148,27 +162,60 @@ public class ValleyTraveler {
         } else if (newNode.next != null && isValley(newNode.next)) {
             firstValley = newNode.next;
         } else {
-            firstValley = findFirstValley(); // Fallback to linear search
+            firstValley = findFirstValley();
         }
 
-        firstValleyTreasure = calculateTreasure(firstValley); // Update cached value
+        updateSumUpToFirstValley();
+        firstValleyTreasure = calculateTreasure();
     }
 
+    /**
+     * Returns the current total treasure collected through successive remove operations.
+     * 
+     * @return The total treasure collected.
+     */
     public double getTotalTreasure() {
         return totalTreasure;
     }
 
-    private double calculateTreasure(Node node) {
-        if (node == null) return 0.0;
-        int sum = 0;
-        int count = 0;
+    private Node findFirstValley() {
         Node current = head;
         while (current != null) {
-            sum += current.height;
-            count++;
-            if (current == node) break;
+            if (isValley(current)) {
+                return current;
+            }
             current = current.next;
         }
-        return (double) sum / count;
+        return null;
+    }
+
+    private boolean isValley(Node node) {
+        if (node == null) return false;
+        if (node.prev == null && node.next == null) return true;
+        if (node.prev == null) return node.height < node.next.height;
+        if (node.next == null) return node.height < node.prev.height;
+        return node.height < node.prev.height && node.height < node.next.height;
+    }
+
+    private void updateSumUpToFirstValley() {
+        if (firstValley == null) {
+            sumUpToFirstValley = totalHeightSum;
+            countUpToFirstValley = size;
+        } else {
+            sumUpToFirstValley = 0;
+            countUpToFirstValley = 0;
+            Node current = head;
+            while (current != firstValley) {
+                sumUpToFirstValley += current.height;
+                countUpToFirstValley++;
+                current = current.next;
+            }
+            sumUpToFirstValley += firstValley.height;
+            countUpToFirstValley++;
+        }
+    }
+
+    private double calculateTreasure() {
+        return countUpToFirstValley == 0 ? 0.0 : (double) sumUpToFirstValley / countUpToFirstValley;
     }
 }
