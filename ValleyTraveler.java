@@ -1,9 +1,3 @@
-/**
- * ValleyTraveler class represents a magical map that can identify and modify
- * valley points in the landscape of Numerica.
- * 
- * @author <Luu Vo>
- */
 public class ValleyTraveler {
 
     private static class Node {
@@ -25,6 +19,8 @@ public class ValleyTraveler {
     private double firstValleyTreasure;
     private int size;
     private int totalHeightSum;
+
+    // Additional variables for O(1) treasure calculation
     private int sumUpToFirstValley;
     private int countUpToFirstValley;
 
@@ -55,7 +51,7 @@ public class ValleyTraveler {
         tail = current;
 
         firstValley = findFirstValley();
-        updateSumUpToFirstValley();
+        updateSumAndCount(); // Initialize sum and count up to first valley
         firstValleyTreasure = calculateTreasure();
     }
 
@@ -96,6 +92,7 @@ public class ValleyTraveler {
         Node prevNode = firstValley.prev;
         Node nextNode = firstValley.next;
 
+        // Remove the first valley node
         if (prevNode != null) {
             prevNode.next = nextNode;
         } else {
@@ -110,6 +107,7 @@ public class ValleyTraveler {
         totalHeightSum -= firstValley.height;
         size--;
 
+        // Update the first valley
         if (prevNode != null && isValley(prevNode)) {
             firstValley = prevNode;
         } else if (nextNode != null && isValley(nextNode)) {
@@ -118,7 +116,10 @@ public class ValleyTraveler {
             firstValley = findFirstValley();
         }
 
-        updateSumUpToFirstValley();
+        // Update sum and count up to the new first valley
+        updateSumAndCount();
+
+        // Recalculate the treasure
         firstValleyTreasure = calculateTreasure();
 
         return treasure;
@@ -155,6 +156,7 @@ public class ValleyTraveler {
         totalHeightSum += height;
         size++;
 
+        // Check if the new node is a valley
         if (isValley(newNode)) {
             firstValley = newNode;
         } else if (newNode.prev != null && isValley(newNode.prev)) {
@@ -165,7 +167,10 @@ public class ValleyTraveler {
             firstValley = findFirstValley();
         }
 
-        updateSumUpToFirstValley();
+        // Update sum and count up to the new first valley
+        updateSumAndCount();
+
+        // Recalculate the treasure
         firstValleyTreasure = calculateTreasure();
     }
 
@@ -178,6 +183,11 @@ public class ValleyTraveler {
         return totalTreasure;
     }
 
+    /**
+     * Finds the first valley node in the landscape.
+     * 
+     * @return The first valley node, or null if no valley exists.
+     */
     private Node findFirstValley() {
         Node current = head;
         while (current != null) {
@@ -189,33 +199,44 @@ public class ValleyTraveler {
         return null;
     }
 
+    /**
+     * Checks if a given node is a valley.
+     * 
+     * @param node The node to check.
+     * @return true if the node is a valley, false otherwise.
+     */
     private boolean isValley(Node node) {
         if (node == null) return false;
-        if (node.prev == null && node.next == null) return true;
-        if (node.prev == null) return node.height < node.next.height;
-        if (node.next == null) return node.height < node.prev.height;
-        return node.height < node.prev.height && node.height < node.next.height;
+        boolean isLeftValley = node.prev == null || node.height < node.prev.height;
+        boolean isRightValley = node.next == null || node.height < node.next.height;
+        return isLeftValley && isRightValley;
     }
 
-    private void updateSumUpToFirstValley() {
-        if (firstValley == null) {
-            sumUpToFirstValley = totalHeightSum;
-            countUpToFirstValley = size;
-        } else {
-            sumUpToFirstValley = 0;
-            countUpToFirstValley = 0;
+    /**
+     * Updates the sum and count of nodes up to the first valley.
+     */
+    private void updateSumAndCount() {
+        sumUpToFirstValley = 0;
+        countUpToFirstValley = 0;
+        if (firstValley != null) {
             Node current = head;
-            while (current != firstValley) {
+            while (current != firstValley.next) {
                 sumUpToFirstValley += current.height;
                 countUpToFirstValley++;
                 current = current.next;
             }
-            sumUpToFirstValley += firstValley.height;
-            countUpToFirstValley++;
         }
     }
 
+    /**
+     * Calculates the treasure for the first valley in O(1) time.
+     * 
+     * @return The treasure value.
+     */
     private double calculateTreasure() {
-        return countUpToFirstValley == 0 ? 0.0 : (double) sumUpToFirstValley / countUpToFirstValley;
+        if (firstValley == null || countUpToFirstValley == 0) {
+            return 0.0;
+        }
+        return (double) sumUpToFirstValley / countUpToFirstValley;
     }
 }
